@@ -26,7 +26,7 @@ void setup() {
     graph.begin(&lcd);
 
     // Welcome messages
-    Serial.begin(38400);
+    Serial.begin(74880);
     Serial.println(F("LCD Graph I2C demonstration"));
 
     // Draw the graph:
@@ -39,19 +39,19 @@ void setup() {
       graph.add(1);
     }
     graph.setRegisters();
-    graph.display(0,0);
-    graph.setRegisters();
+    // graph.display(0,0);
+    // graph.setRegisters();
 }
 
 void loop() {
-  static int a = 5;
-  for (int i = 0; i < 8; i++) {
+  static int a = 8;
+  for (int i = 0; i < 5; i++) {
       graph.add(0);
-      delay(5);
-      graph.display(0,0);
+      // delay(0);
+      // graph.display(0,0);
       graph.setRegisters();
-      graph.display(0,1);
-      graph.setRegisters();
+      // graph.display(0,1);
+      // graph.setRegisters();
   }
   delay(500);
   a--;
