@@ -16,6 +16,8 @@
 #define LCD_ADDRESS 0x27
 #define LCD_ROWS 2
 #define LCD_COLS 16
+#define PUNCH_SIGNAL 11
+
 LiquidCrystal_I2C lcd(LCD_ADDRESS, LCD_COLS, LCD_ROWS);
 LCDGraph<float, LiquidCrystal_I2C> graph(8, 0); // We want to store floats in this case
 
@@ -26,7 +28,7 @@ void setup() {
     graph.begin(&lcd);
 
     // Welcome messages
-    Serial.begin(74880);
+    Serial.begin(9600);
     Serial.println(F("LCD Graph I2C demonstration"));
 
     // Draw the graph:
@@ -41,12 +43,16 @@ void setup() {
     graph.setRegisters();
     // graph.display(0,0);
     // graph.setRegisters();
-    pinMode(2, OUTPUT);
-    digitalWrite(2, HIGH);
+    pinMode(PUNCH_SIGNAL, INPUT);
+    pinMode(12, OUTPUT);
+    pinMode(13, OUTPUT);
 }
 
 void loop() {
   static int a = 8;
+  while (!digitalRead(PUNCH_SIGNAL));
+  digitalWrite(12, HIGH);
+  digitalWrite(13, HIGH);
   for (int i = 0; i < 5; i++) {
       graph.add(0);
       // delay(0);
@@ -55,6 +61,7 @@ void loop() {
       // graph.display(0,1);
       // graph.setRegisters();
   }
-  delay(500);
+  digitalWrite(12, LOW);
+  digitalWrite(13, LOW);
   a--;
 }
