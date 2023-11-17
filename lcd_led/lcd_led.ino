@@ -50,7 +50,9 @@ void setup() {
 
 void loop() {
   static int a = 8;
-  while (!digitalRead(PUNCH_SIGNAL));
+  while (!digitalRead(PUNCH_SIGNAL)) {
+    delay(10);
+  }
   digitalWrite(12, HIGH);
   digitalWrite(13, HIGH);
   for (int i = 0; i < 5; i++) {
@@ -64,4 +66,5 @@ void loop() {
   digitalWrite(12, LOW);
   digitalWrite(13, LOW);
   a--;
+  delay(300);
 }

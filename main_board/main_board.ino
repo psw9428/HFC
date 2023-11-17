@@ -9,14 +9,15 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  digitalWrite(SEND_TO_LCD, LOW);
-  Serial.println("...");
-  while (!digitalRead(PUNCH_SIGNAL)) {
-    delay(50);
+  static int status = 0;
+  int signal = digitalRead(PUNCH_SIGNAL);
+  if (signal && status == 0) {
+    digitalWrite(SEND_TO_LCD, HIGH);
+    status = 1;
   }
-  Serial.println("!!!!");
-  digitalWrite(SEND_TO_LCD, HIGH);
-  delay(300);
+  if (!signal && status == 1) {
+    digitalWrite(SEND_TO_LCD, LOW);
+    status = 0;
+  }
 }
 

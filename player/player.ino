@@ -107,7 +107,7 @@ void distance_func() {
   }
 }
 
-void loop() {  
+void loop() {
   // int distance = sensor.getCM();
   // if (distance < 7 && distance > 0)
   // {
