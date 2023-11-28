@@ -12,8 +12,8 @@
 #define PUNCH_PIN 4
 #define PUNCH_SIGNAL 12
 
-#define MOVE_SPEED 20
-#define DASH_SPEED 80
+#define MOVE_SPEED 15
+#define DASH_SPEED 50
 
 #define ECHOPIN 5
 #define TRIGPIN 6
@@ -90,7 +90,7 @@ void left_right_func() {
       if (status == RIGHT_PIN && dash_status == RIGHT_PIN && millis() - prev_touch <= 400) {
         Serial.println("DASH_RIGHT!");
         BigStepper.setSpeed(DASH_SPEED);
-        BigStepper.step(-100);
+        BigStepper.step(-40);
         dash_status = DEFAULT;
         prev_touch = 0;
         BigStepper.setSpeed(MOVE_SPEED);
@@ -98,7 +98,7 @@ void left_right_func() {
       else if (status == LEFT_PIN && dash_status == LEFT_PIN && millis() - prev_touch <= 400) {
         Serial.println("DASH_LEFT!!");
         BigStepper.setSpeed(DASH_SPEED);
-        BigStepper.step(100);
+        BigStepper.step(40);
         dash_status = DEFAULT;
         prev_touch = 0;
         BigStepper.setSpeed(MOVE_SPEED);

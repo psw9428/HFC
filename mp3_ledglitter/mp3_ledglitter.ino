@@ -14,7 +14,7 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600);
   MP3Module.begin(9600);
-  if (!MP3Player.begin(MP3Module)) {
+  if (!MP3Player.begin(MP3Module), false) {
     Serial.println(F("Unalbe to begin:"));
     Serial.println(F("1. Please recheck the connection!"));
     Serial.println(F("2. Please insert the SD card"));
@@ -26,8 +26,8 @@ void setup() {
   pinMode(5, INPUT_PULLUP);
   //glitter_thread.onRun(glitter);
   delay(1);
-  MP3Player.volume(20);
-  MP3Player.play(3);
+  MP3Player.volume(15);
+  MP3Player.play(10);
 }
 
 void glitter() {

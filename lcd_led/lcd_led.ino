@@ -43,18 +43,14 @@ void setup() {
     graph.setRegisters();
     // graph.display(0,0);
     // graph.setRegisters();
-    pinMode(PUNCH_SIGNAL, INPUT);
-    pinMode(12, OUTPUT);
-    pinMode(13, OUTPUT);
+    pinMode(A3, INPUT);
 }
 
 void loop() {
   static int a = 8;
-  while (!digitalRead(PUNCH_SIGNAL)) {
+  while (!digitalRead(A3)) {
     delay(10);
   }
-  digitalWrite(12, HIGH);
-  digitalWrite(13, HIGH);
   for (int i = 0; i < 5; i++) {
       graph.add(0);
       // delay(0);
@@ -63,8 +59,6 @@ void loop() {
       // graph.display(0,1);
       // graph.setRegisters();
   }
-  digitalWrite(12, LOW);
-  digitalWrite(13, LOW);
   a--;
   delay(300);
 }

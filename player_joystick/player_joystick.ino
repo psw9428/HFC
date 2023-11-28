@@ -5,20 +5,22 @@
 #include <Thread.h>
 #include <ThreadController.h>
 
-#define LEFT_PIN 2
-#define RIGHT_PIN 3
+#define DASH_PIN 2
+#define GUARD_PIN 13
 #define PUNCH_PIN 4
-#define GUARD_PIN 12
-#define PUNCH_SIGNAL 12
-#define GUARD_SIGNAL 13
-#define DAMAGED_SIGNAL 0
+
+#define ECHOPIN 5
+#define TRIGPIN 6
+
+#define SERVO_PIN 7
+// 8, 9, 10, 11 : Stepper
+#define GUARD_SIGNAL 12
+#define PUNCH_SIGNAL 3
+#define DAMAGE_SIGNAL A2
 
 #define MOVE_SPEED 10
 #define DASH_SPEED 50
 #define DASH_DISTANCE 40
-
-#define ECHOPIN 5
-#define TRIGPIN 6
 
 #define READY_POSE 0
 #define ON_PUNCHING 1
@@ -28,6 +30,9 @@
 #define IN_PUNCH_RANGE 1
 #define TOO_CLOSE 2
 #define NO_DASH 4
+
+#define LEFT 1
+#define RIGHT 2
 
 #define PUNCH_DELAY 1000
 
@@ -52,7 +57,6 @@ void setup() {
   // initialize function
   initial();
 
-  // initialize the serial port:
   Serial.begin(9600);
 }
 
@@ -61,14 +65,13 @@ void initial() {
   BigStepper.setSpeed(MOVE_SPEED);
 
   // servo reset (punch motor)
-  myservo.attach(7, 444, 2500);
+  myservo.attach(SERVO_PIN, 444, 2500);
   myservo.write(10);
 
   // left, right moving and punch pin setting
-  pinMode(LEFT_PIN, INPUT_PULLUP);
-  pinMode(RIGHT_PIN, INPUT_PULLUP);
   pinMode(PUNCH_PIN, INPUT_PULLUP);
   pinMode(GUARD_PIN, INPUT_PULLUP);
+  pinMode(DASH_PIN, INPUT_PULLUP);
   pinMode(PUNCH_SIGNAL, OUTPUT);
 
   // thread onRun setting
@@ -96,59 +99,28 @@ void initial() {
 }
 
 void left_right_func() {
-  int left;
-  int right;
+  int joystick;
   static int status = 0;
-  static int dash_status = 0;
   static unsigned long tmp = 0;
-  static unsigned long prev_touch = 0;
-  left = digitalRead(LEFT_PIN);
-  right = digitalRead(RIGHT_PIN);
+  joystick = analogRead(A0);
 
   if (guard_status)
     return;
-  if (!left && right) {
-    BigStepper.step(1);
-    if (!tmp)
-      tmp = millis();
-    status = LEFT_PIN;
-  }
-  else if (left && !right && !(distance_status & TOO_CLOSE)) {
+  if (joystick < 450) {
     BigStepper.step(-1);
-    status = RIGHT_PIN;
-    if (!tmp)
-      tmp = millis();
+    status = LEFT ;
   }
-  else if (status) {
-    if (millis() - tmp <= 150) { // touch very short
-      Serial.println("SHORT_TOUCH");
-      if (status == RIGHT_PIN && dash_status == RIGHT_PIN && millis() - prev_touch <= 400) {
-        Serial.println("DASH_RIGHT!");
-        BigStepper.setSpeed(DASH_SPEED);
-        BigStepper.step(-DASH_DISTANCE);
-        dash_status = DEFAULT;
-        prev_touch = 0;
-        BigStepper.setSpeed(MOVE_SPEED);
-      }
-      else if (status == LEFT_PIN && dash_status == LEFT_PIN && millis() - prev_touch <= 400) {
-        Serial.println("DASH_LEFT!!");
-        BigStepper.setSpeed(DASH_SPEED);
-        BigStepper.step(DASH_DISTANCE);
-        dash_status = DEFAULT;
-        prev_touch = 0;
-        BigStepper.setSpeed(MOVE_SPEED);
-      }
-      else if (dash_status == DEFAULT) {
-        dash_status = status;
-        prev_touch = millis();
-      }
-      else {
-        dash_status = DEFAULT;
-        prev_touch = 0;
-      }
-    }
-    status = DEFAULT;
-    tmp = 0;
+  else if (joystick > 550 && !(distance_status & TOO_CLOSE)) {
+    BigStepper.step(1);
+    status = RIGHT;
+  }
+  else
+    status = 0;
+  if (!digitalRead(DASH_PIN) && tmp + 800 < millis()) {
+    BigStepper.setSpeed(DASH_SPEED);
+    BigStepper.step(DASH_DISTANCE * (status == RIGHT) - DASH_DISTANCE * (status == LEFT));
+    BigStepper.setSpeed(MOVE_SPEED);
+    tmp = millis();
   }
 }
 
@@ -215,17 +187,17 @@ void guard_func() {
 }
 
 void damaged_func() {
-  static unsigned long tmp = 0;
-  if (digitalRead(DAMAGED_SIGNAL) && !damaged_status) {
-    damaged_status = true;
-    tmp = millis();
-    myservo.write(0);
-  }
-  if (damaged_status && tmp + 500 <= millis()) {
-    damaged_status = false;
-    tmp = 0;
-    myservo.write(10);
-  }
+  // static unsigned long tmp = 0;
+  // if (digitalRead(DAMAGED_SIGNAL) && !damaged_status) {
+  //   damaged_status = true;
+  //   tmp = millis();
+  //   myservo.write(0);
+  // }
+  // if (damaged_status && tmp + 500 <= millis()) {
+  //   damaged_status = false;
+  //   tmp = 0;
+  //   myservo.write(10);
+  // }
 }
 
 void loop() {
