@@ -23,7 +23,7 @@
 #define ON_PUNCHING 1
 #define ON_PUNCHBACK 2
 #define PUNCH_DELAY 1000
-#define PUNCH_DEFAULT_ANGLE 30
+#define PUNCH_DEFAULT_ANGLE 40
 
 // Using in distance_func
 #define OUT_OF_RANGE 0
@@ -34,9 +34,9 @@
 // Using in left_right_func
 #define LEFT 1
 #define RIGHT 2
-#define MOVE_SPEED 10
-#define DASH_SPEED 50
-#define DASH_DISTANCE 40
+#define MOVE_SPEED 15
+#define DASH_SPEED 40
+#define DASH_DISTANCE 30
 
 const int stepsPerRevolution = 200;
 
@@ -47,7 +47,7 @@ Thread left_right_thread = Thread();
 Thread punch_thread = Thread();
 Thread distance_thread = Thread();
 Thread guard_thread = Thread();
-Thread damaged_thread = Thread();
+// Thread damaged_thread = Thread();
 
 // make Stepper, DistanceSensor object
 Stepper BigStepper(stepsPerRevolution, 8, 9, 10, 11);
@@ -60,7 +60,6 @@ bool damaged_status;
 
 void setup() {
   Serial.begin(9600);
-
   // initialize function
   initial();
 }
@@ -85,7 +84,7 @@ void initial() {
   punch_thread.onRun(punch_func);
   distance_thread.onRun(distance_func);
   guard_thread.onRun(guard_func);
-  damaged_thread.onRun(damaged_func);
+  //damaged_thread.onRun(damaged_func);
 
   // set thread's interval
   distance_thread.setInterval(50);
@@ -99,6 +98,9 @@ void initial() {
   digitalWrite(PUNCH_SIGNAL, LOW);
   digitalWrite(GUARD_SIGNAL, LOW);
 
+  delay(1000);
+  while(digitalRead(DAMAGE_SIGNAL));
+
   // initialize global var
   distance_status = 0;
   guard_status = false;
@@ -108,7 +110,7 @@ void initial() {
 // manage moving and dash
 void left_right_func() {
   // dameged_status : stunning, guarding : can't move
-  if (damaged_status || guard_status) 
+  if (guard_status) 
     return;
 
   int joystick;
@@ -116,14 +118,14 @@ void left_right_func() {
   static unsigned long tmp = 0;
 
   joystick = analogRead(A0);
-  
+
   // move part
-  if (joystick < 450) {
-    BigStepper.step(-1);
+  if (joystick > 550) {
+    BigStepper.step(1);
     status = LEFT ;
   }
-  else if (joystick > 550 && !(distance_status & TOO_CLOSE)) {
-    BigStepper.step(1);
+  else if (joystick < 470 && !(distance_status & TOO_CLOSE)) {
+    BigStepper.step(-1);
     status = RIGHT;
   }
   else
@@ -132,7 +134,7 @@ void left_right_func() {
   // dash part
   if (!digitalRead(DASH_PIN) && tmp + 800 < millis()) {
     BigStepper.setSpeed(DASH_SPEED);
-    BigStepper.step(DASH_DISTANCE * (status == RIGHT) - DASH_DISTANCE * (status == LEFT));
+    BigStepper.step(DASH_DISTANCE * (status == LEFT) - DASH_DISTANCE * (status == RIGHT));
     BigStepper.setSpeed(MOVE_SPEED);
     tmp = millis();
   }
@@ -141,17 +143,17 @@ void left_right_func() {
 // manage punch action
 void punch_func() {
   // if damaged exit func
-  if (damaged_status)
-    return;
+  // if (damaged_status)
+  //   return;
 
   static unsigned long time = 0;
   static int status = 0;
 
-  // punch part 
-  if (!digitalRead(PUNCH_PIN) && !status) {
-    if (guard_status)
-      return;
-    Serial.println("punch");
+  // punch part
+  if (guard_status)
+    status = 0;
+  else if (!digitalRead(PUNCH_PIN) && !status) {
+    //Serial.println("punch");
     myservo.write(PUNCH_DEFAULT_ANGLE + 60);
     time = millis();
     status = ON_PUNCHING;
@@ -159,8 +161,8 @@ void punch_func() {
   if (time + 350 <= millis() && status & ON_PUNCHING) {
     status = ON_PUNCHBACK;
     if(distance_status & IN_PUNCH_RANGE) {
-      Serial.println("SEND_PUNCH_SIGNAL");
       digitalWrite(PUNCH_SIGNAL, HIGH);
+      //Serial.println("SEND_PUNCH_SIGNAL");
     }
     myservo.write(PUNCH_DEFAULT_ANGLE);
     time = millis();
@@ -177,26 +179,19 @@ void punch_func() {
 
 // manage distance_status
 void distance_func() {
-  // If damaged, exit this func
-  if (damaged_status)
-    return ;
-
   // measure distance
   float distance = sensor.getCM();
 
   if (distance <= 3.0 && distance > 0 && !(distance_status & TOO_CLOSE)) {
-    //Serial.print(distance);
-    Serial.println("TOO_CLOSE!");
+    //Serial.println("TOO_CLOSE!");
     distance_status = TOO_CLOSE | IN_PUNCH_RANGE;
   }
   else if (distance > 3.0 && distance <= 4.0 && !(distance_status & IN_PUNCH_RANGE)) {
-    //Serial.print(distance);
-    Serial.println("IN_PUNCH_RANGE!");
+    //Serial.println("IN_PUNCH_RANGE!");
     distance_status = IN_PUNCH_RANGE;
   }
   else if (distance > 4.0 && distance_status) {
-    //Serial.print(distance);
-    Serial.println("OUT_RANGE");
+    //Serial.println("OUT_RANGE");
     distance_status = OUT_OF_RANGE;
   }
 }
@@ -204,20 +199,20 @@ void distance_func() {
 // manage guard status
 void guard_func() {
   // if damaged, exit this func
-  if (damaged_status)
-    return;
+  // if (damaged_status)
+  //   return;
   
   // guard part
   if (!digitalRead(GUARD_PIN)) {
     if (!guard_status) {
-      Serial.println("GUARD!");
+      //Serial.println("GUARD!");
       guard_status = true;
       digitalWrite(GUARD_SIGNAL, HIGH);
       myservo.write(PUNCH_DEFAULT_ANGLE - 30);
     }
   }
   else if (guard_status) {
-    Serial.println("NO_GUARD");
+    //Serial.println("NO_GUARD");
     guard_status = false;
     digitalWrite(GUARD_SIGNAL, LOW);
     myservo.write(PUNCH_DEFAULT_ANGLE);
@@ -229,7 +224,7 @@ void damaged_func() {
   static unsigned long tmp = 0;
 
   if (digitalRead(DAMAGE_SIGNAL) && !damaged_status) {
-    Serial.println("DAMAGED..! STUNNING");
+    //Serial.println("DAMAGED..! STUNNING");
     damaged_status = true;
     tmp = millis();
     myservo.write(PUNCH_DEFAULT_ANGLE - 30);
@@ -238,7 +233,7 @@ void damaged_func() {
     damaged_status = false;
     tmp = 0;
     myservo.write(PUNCH_DEFAULT_ANGLE);
-    Serial.println("STUN END");
+    //Serial.println("STUN END");
   }
 }
 

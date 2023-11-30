@@ -34,9 +34,9 @@
 // Using in left_right_func
 #define LEFT 1
 #define RIGHT 2
-#define MOVE_SPEED 10
-#define DASH_SPEED 50
-#define DASH_DISTANCE 40
+#define MOVE_SPEED 15
+#define DASH_SPEED 40
+#define DASH_DISTANCE 30
 
 const int stepsPerRevolution = 200;
 
@@ -79,13 +79,14 @@ void initial() {
   pinMode(DASH_PIN, INPUT_PULLUP);
   pinMode(PUNCH_SIGNAL, OUTPUT);
   pinMode(GUARD_SIGNAL, OUTPUT);
+  pinMode(DAMAGE_SIGNAL, INPUT);
 
   // thread onRun setting
   left_right_thread.onRun(left_right_func);
   punch_thread.onRun(punch_func);
   distance_thread.onRun(distance_func);
   guard_thread.onRun(guard_func);
-  damaged_thread.onRun(damaged_func);
+  //damaged_thread.onRun(damaged_func);
 
   // set thread's interval
   distance_thread.setInterval(50);
@@ -99,16 +100,20 @@ void initial() {
   digitalWrite(PUNCH_SIGNAL, LOW);
   digitalWrite(GUARD_SIGNAL, LOW);
 
+  delay(1000);
+  while(digitalRead(DAMAGE_SIGNAL));
+
   // initialize global var
   distance_status = 0;
   guard_status = false;
   damaged_status = false;
+  //Serial.println("setup check!!");
 }
 
 // manage moving and dash
 void left_right_func() {
   // dameged_status : stunning, guarding : can't move
-  if (damaged_status || guard_status) 
+  if (guard_status) 
     return;
 
   int joystick;
@@ -116,15 +121,15 @@ void left_right_func() {
   static unsigned long tmp = 0;
 
   joystick = analogRead(A0);
-  
+
   // move part
-  if (joystick < 450) {
-    BigStepper.step(-1);
-    status = LEFT ;
+  if (joystick < 470) {
+    BigStepper.step(1);
+    status = RIGHT ;
   }
   else if (joystick > 550 && !(distance_status & TOO_CLOSE)) {
-    BigStepper.step(1);
-    status = RIGHT;
+    BigStepper.step(-1);
+    status = LEFT;
   }
   else
     status = 0;
@@ -141,17 +146,17 @@ void left_right_func() {
 // manage punch action
 void punch_func() {
   // if damaged exit func
-  if (damaged_status)
-    return;
+  // if (damaged_status)
+  //   return;
 
   static unsigned long time = 0;
   static int status = 0;
 
   // punch part 
-  if (!digitalRead(PUNCH_PIN) && !status) {
-    if (guard_status)
-      return;
-    Serial.println("punch");
+  if (guard_status)
+    status = 0;
+  else if (!digitalRead(PUNCH_PIN) && !status) {
+    //Serial.println("punch");
     myservo.write(PUNCH_DEFAULT_ANGLE + 60);
     time = millis();
     status = ON_PUNCHING;
@@ -159,7 +164,7 @@ void punch_func() {
   if (time + 350 <= millis() && status & ON_PUNCHING) {
     status = ON_PUNCHBACK;
     if(distance_status & IN_PUNCH_RANGE) {
-      Serial.println("SEND_PUNCH_SIGNAL");
+      //Serial.println("SEND_PUNCH_SIGNAL");
       digitalWrite(PUNCH_SIGNAL, HIGH);
     }
     myservo.write(PUNCH_DEFAULT_ANGLE);
@@ -178,25 +183,26 @@ void punch_func() {
 // manage distance_status
 void distance_func() {
   // If damaged, exit this func
-  if (damaged_status)
-    return ;
+  // if (damaged_status)
+  //   return ;
 
   // measure distance
   float distance = sensor.getCM();
+  //Serial.println(distance);
 
   if (distance <= 3.0 && distance > 0 && !(distance_status & TOO_CLOSE)) {
     //Serial.print(distance);
-    Serial.println("TOO_CLOSE!");
+    //Serial.println("TOO_CLOSE!");
     distance_status = TOO_CLOSE | IN_PUNCH_RANGE;
   }
   else if (distance > 3.0 && distance <= 4.0 && !(distance_status & IN_PUNCH_RANGE)) {
     //Serial.print(distance);
-    Serial.println("IN_PUNCH_RANGE!");
+    //Serial.println("IN_PUNCH_RANGE!");
     distance_status = IN_PUNCH_RANGE;
   }
   else if (distance > 4.0 && distance_status) {
     //Serial.print(distance);
-    Serial.println("OUT_RANGE");
+    //Serial.println("OUT_RANGE");
     distance_status = OUT_OF_RANGE;
   }
 }
@@ -204,20 +210,20 @@ void distance_func() {
 // manage guard status
 void guard_func() {
   // if damaged, exit this func
-  if (damaged_status)
-    return;
+  // if (damaged_status)
+  //   return;
   
   // guard part
   if (!digitalRead(GUARD_PIN)) {
     if (!guard_status) {
-      Serial.println("GUARD!");
+      //Serial.println("GUARD!");
       guard_status = true;
       digitalWrite(GUARD_SIGNAL, HIGH);
       myservo.write(PUNCH_DEFAULT_ANGLE - 30);
     }
   }
   else if (guard_status) {
-    Serial.println("NO_GUARD");
+    //Serial.println("NO_GUARD");
     guard_status = false;
     digitalWrite(GUARD_SIGNAL, LOW);
     myservo.write(PUNCH_DEFAULT_ANGLE);
@@ -229,7 +235,7 @@ void damaged_func() {
   static unsigned long tmp = 0;
 
   if (digitalRead(DAMAGE_SIGNAL) && !damaged_status) {
-    Serial.println("DAMAGED..! STUNNING");
+    //Serial.println("DAMAGED..! STUNNING");
     damaged_status = true;
     tmp = millis();
     myservo.write(PUNCH_DEFAULT_ANGLE - 30);
@@ -238,7 +244,7 @@ void damaged_func() {
     damaged_status = false;
     tmp = 0;
     myservo.write(PUNCH_DEFAULT_ANGLE);
-    Serial.println("STUN END");
+    //Serial.println("STUN END");
   }
 }
 
