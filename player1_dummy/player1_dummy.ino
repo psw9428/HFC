@@ -98,13 +98,17 @@ void initial() {
   digitalWrite(PUNCH_SIGNAL, LOW);
   digitalWrite(GUARD_SIGNAL, LOW);
 
-  delay(1000);
+
+  delay(2000);
   while(digitalRead(DAMAGE_SIGNAL));
+  Serial.println("Syncronize!");
 
   // initialize global var
   distance_status = 0;
   guard_status = false;
   damaged_status = false;
+
+  delay(5500);
 }
 
 // manage moving and dash
@@ -123,9 +127,11 @@ void left_right_func() {
   if (joystick > 550) {
     BigStepper.step(1);
     status = LEFT ;
+    //Serial.println("LEFT");
   }
   else if (joystick < 470 && !(distance_status & TOO_CLOSE)) {
     BigStepper.step(-1);
+    //Serial.println("RIGHT");
     status = RIGHT;
   }
   else
@@ -205,14 +211,14 @@ void guard_func() {
   // guard part
   if (!digitalRead(GUARD_PIN)) {
     if (!guard_status) {
-      //Serial.println("GUARD!");
+      Serial.println("GUARD!");
       guard_status = true;
       digitalWrite(GUARD_SIGNAL, HIGH);
       myservo.write(PUNCH_DEFAULT_ANGLE - 30);
     }
   }
   else if (guard_status) {
-    //Serial.println("NO_GUARD");
+    Serial.println("NO_GUARD");
     guard_status = false;
     digitalWrite(GUARD_SIGNAL, LOW);
     myservo.write(PUNCH_DEFAULT_ANGLE);

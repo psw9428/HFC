@@ -5,7 +5,7 @@
 #include <LiquidCrystal_I2C.h>
 #include <LCDGraph.h>
 
-#define PLAYER "2P"
+#define PLAYER "1P"
 
 #define LCD_ADDRESS 0x27
 #define LCD_ROWS 2
@@ -62,9 +62,14 @@ void setup() {
   lcd.clear();
   lcd.setCursor(4, 0);
   lcd.print("Loading....");
-  delay(1000);
+  delay(2000);
   while(digitalRead(END_GAME_PIN));
+  Serial.println("Syncronize:)");
 
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("WELCOME TO HFC!");
+  delay(5500);
   health_bar_reset();
 
   pinMode(A3, INPUT);
@@ -80,11 +85,11 @@ void health_bar_reset() {
   for (int i = 3; i > 0; i--) {
     lcd.setCursor(5, 0);
     lcd.print(i);
-    delay(1000);
+    delay(300);
   }
   lcd.setCursor(2,0);
   lcd.print("FIGHT!!");
-  delay(1000);
+  delay(500);
   lcd.clear();
 
   lcd.setCursor(5,0);
@@ -167,15 +172,15 @@ void looser() {
 void game_status_func() {
   static unsigned long tmp = 0;
 
-  if (digitalRead(A3) && tmp + 350) {
-    damage_funcs.run();
-    health_cnt--;
-    tmp = millis();
-  }
   if (digitalRead(END_GAME_PIN)) {
     game_status.clear();
     damage_funcs.run();
     game_end = true;
+  }
+  else if (digitalRead(A3) && tmp + 500 < millis()) {
+    damage_funcs.run();
+    health_cnt--;
+    tmp = millis();
   }
 }
 

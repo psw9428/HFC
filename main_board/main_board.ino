@@ -27,10 +27,10 @@
 #define LOOSE 16
 #define WIN 32
 
-#define DAMAGE_DELAY 300
+#define DAMAGE_DELAY 600
 
 #define MAX_HEALTH 80
-#define MUSIC_VOLUME 20
+#define MUSIC_VOLUME 15
 
 
 SoftwareSerial MP3Module(5, 6);
@@ -88,17 +88,21 @@ void setup() {
   digitalWrite(P2_END_PIN, HIGH);
   digitalWrite(P1_DAMAGE_SIGNAL, HIGH);
   digitalWrite(P2_DAMAGE_SIGNAL, HIGH);
-  delay(4000);
+  delay(4500);
+  Serial.println("Syncronize!");
   digitalWrite(P1_END_PIN, LOW);
   digitalWrite(P2_END_PIN, LOW);
   digitalWrite(P1_DAMAGE_SIGNAL, LOW);
   digitalWrite(P2_DAMAGE_SIGNAL, LOW);
 
-  MP3Player.volume(23);
-  MP3Player.play(2);
-  delay(4500);
+  // MP3Player.volume(23);
+  // MP3Player.play(2);
+  // delay(4500);
+  // MP3Player.volume(MUSIC_VOLUME);
+  // MP3Player.loop(1);
   MP3Player.volume(MUSIC_VOLUME);
-  MP3Player.loop(1);
+  MP3Player.play(1);
+  delay(5500);
 }
 
 void p1_func() {
@@ -185,11 +189,11 @@ void loop() {
     delay(300);
     digitalWrite(P1_END_PIN, HIGH);
     digitalWrite(P2_END_PIN, HIGH);
-    MP3Player.volume(30);
+    MP3Player.volume(20);
     if (p1.status & WIN)
-      MP3Player.play(3);
+      MP3Player.play(2);
     else
-      MP3Player.play(4);
+      MP3Player.play(3);
     while(true);
   }
 }

@@ -100,14 +100,16 @@ void initial() {
   digitalWrite(PUNCH_SIGNAL, LOW);
   digitalWrite(GUARD_SIGNAL, LOW);
 
-  delay(1000);
+  delay(2000);
   while(digitalRead(DAMAGE_SIGNAL));
+  Serial.println("Syncronize!");
 
   // initialize global var
   distance_status = 0;
   guard_status = false;
   damaged_status = false;
   //Serial.println("setup check!!");
+  delay(5500);
 }
 
 // manage moving and dash
@@ -126,10 +128,12 @@ void left_right_func() {
   if (joystick < 470) {
     BigStepper.step(1);
     status = RIGHT ;
+    //Serial.println("RIGHT");
   }
   else if (joystick > 550 && !(distance_status & TOO_CLOSE)) {
     BigStepper.step(-1);
     status = LEFT;
+    //Serial.println("LEFT");
   }
   else
     status = 0;
@@ -188,7 +192,6 @@ void distance_func() {
 
   // measure distance
   float distance = sensor.getCM();
-  //Serial.println(distance);
 
   if (distance <= 3.0 && distance > 0 && !(distance_status & TOO_CLOSE)) {
     //Serial.print(distance);
